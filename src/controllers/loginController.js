@@ -1,6 +1,7 @@
 const login = require('../services/loginService');
 
 const getEmailPassword = async (req, res) => {
+  const { token } = req;
   const { email, password } = req.body;
   const data = await login.getByEmailPassword(email, password);
   if (data) {
