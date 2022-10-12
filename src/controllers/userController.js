@@ -1,11 +1,11 @@
 const userService = require('../services/userService');
 
 const insertUser = async (req, res) => {
-  const newToken = await userService.inserUser(req.body);
-  if (newToken.status) {
-    return res.status(newToken.status).json({ message: newToken.message });
+  const token = await userService.inserUser(req.body);
+  if (token.status) {
+    return res.status(token.status).json({ message: token.message });
   }
-  return res.status(201).json(newToken);
+  return res.status(201).json({ token });
 };
 
 module.exports = {

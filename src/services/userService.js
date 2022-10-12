@@ -8,15 +8,13 @@ const inserUser = async (body) => {
 
   const emailValidate = await User.findOne({ where: { email: body.email } });
   if (emailValidate) return { status: 409, message: 'User already registered' };
-
   const newUser = await User.create(body);
-
-  const searchNewUser = await User.findOne({
-    attributes: ['id', 'email', 'display_name'], where: newUser.dataValues,
+  const findUser = await User.findAll({
+    attributes: ['displayName', 'email', 'password'],
+    where: newUser.dataValues,
   });
-
-  const newToken = createToken(searchNewUser);
-  return { token: newToken };
+  const newToken = createToken.tokenGenerate(findUser);
+  return newToken;
 };
 
 module.exports = {

@@ -1,25 +1,26 @@
 const jwt = require('jsonwebtoken');
 
-require('dotenv/config');
-const { getByEmailPassord } = require('../services/loginService');
-
 const secret = process.env.JWT_SECRET || 'quiViagi';
 
-module.exports = async (req, res, next) => {
-  const token = req.header('Authorization');
+const tokenValidate = async (token) => {
   if (!token) {
-    return res.status(401).json({ message: 'Token not found' });
+    const status = 401;
+    const message = 'Token not found';
+    const error = { status, message };
+    throw error;
   }
 
   try {
-    const decoded = jwt.verify(token, secret);
-    const user = await getByEmailPassord(decoded.data.userEmail);
-    if (!user) {
-      return res.status(401).json({ message: 'Erro ao procurar usuário do token.' });
-    }
-    req.user = user;
-    next();
-  } catch (e) {
-    return res.status(401).json({ message: e.message });
+    const tokenVerify = jwt.verify(token, secret);
+    return tokenVerify;
+  } catch (error) {
+    const status = 401;
+    const message = 'Expired or invalid token';
+    const err = { status, message };
+    throw err;
   }
+};
+
+module.exports = {
+  tokenValidate,
 };
