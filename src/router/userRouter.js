@@ -9,6 +9,8 @@ routerUser.post('/', userController.insertUser);
 
 routerUser.get('/', userController.getUsers);
 
+routerUser.get('/:id', userController.getUserById);
+
 module.exports = {
   routerUser,
 };
