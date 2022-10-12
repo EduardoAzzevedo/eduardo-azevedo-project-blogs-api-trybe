@@ -17,6 +17,14 @@ const inserUser = async (body) => {
   return newToken;
 };
 
+const getUsers = async () => {
+  const users = await User.findAll({
+    attributes: { exclude: ['password'] },
+  });
+  return users;
+};
+
 module.exports = {
   inserUser,
+  getUsers,
 };

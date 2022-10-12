@@ -34,8 +34,10 @@ const isBoryValid = (email, password) => email && password;
     return res.status(400).json({ message: 'Invalid fields' });
   }
 };
+const tokenVerify = (authorization) => jwt.verify(authorization, secret);
 
 module.exports = {
   tokenGenerate,
   createToken,
+  tokenVerify,
 };
