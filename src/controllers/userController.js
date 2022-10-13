@@ -10,11 +10,7 @@ const insertUser = async (req, res) => {
 };
 
 const getUsers = async (req, res) => {
-  const { authorization } = req.headers;
-  if (!authorization) return res.status(401).json({ message: 'Token not found' });
-
   try {
-    createToken.tokenVerify(authorization);
     const users = await userService.getUsers();
     return res.status(200).json(users);
   } catch (e) {
@@ -26,14 +22,14 @@ const getUserById = async (req, res) => {
   const { authorization } = req.headers;
   const { id } = req.params;
   if (!authorization) return res.status(401).json({ message: 'Token not found' });
-
   try {
     createToken.tokenVerify(authorization);
     const { status, message, user } = await userService.getUserById(id);
+    console.log('USUARIO', user);
     if (!user) {
       return res.status(status).json({ message });
     }
-    return res.status(status).json({ user });
+    return res.status(status).json(user);
   } catch (e) {
     return res.status(401).json({ message: 'Expired or invalid token' });
   }
