@@ -10,7 +10,10 @@ const insertUser = async (req, res) => {
 };
 
 const getUsers = async (req, res) => {
+  const { authorization } = req.headers;
+  if (!authorization) return res.status(401).json({ message: 'Token not found' });
   try {
+    createToken.tokenVerify(authorization);
     const users = await userService.getUsers();
     return res.status(200).json(users);
   } catch (e) {
