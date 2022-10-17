@@ -1,76 +1,79 @@
-const { BlogPost, User, Category, PostCategory, sequelize } = require('../models'); 
-const { validateDeleteBlogPost } = require('../middleware/validateDeletePost');
+const { Op } = require('sequelize');
+const { BlogPost, PostCategory, User, Category } = require('../models');
 
-const categoryIdsValidate = async (categoryIds) => {
-  const categories = await Category.findAll();
-  const array = [];
-
-  for (let index = 0; index < categoryIds.length; index += 1) {
-    const cateogy = categoryIds[index];
-    array.push(categories.some(({ id }) => id === cateogy));
-  }
-
-  if (array.some((item) => item === false)) {
-    return '"categoryIds" not found';
-  }
+const createPost = async (post, id) => {
+  const result = await BlogPost.create({
+    ...post,
+    userId: id,
+    updated: new Date(),
+    published: new Date(),
+  });
+  await Promise.all(
+    post.categoryIds.map(async (categoryId) =>
+      PostCategory.create({
+        postId: result.id,
+        categoryId,
+      })),
+  );
+  return { type: null, message: result };
 };
 
-const insertBlogPost = async (userId, title, content, categoryIds) => {
-  const t = await sequelize.transaction();
-
-  try {
-    const categoriesIsValide = await categoryIdsValidate(categoryIds);
-
-    if (categoriesIsValide === '"categoryIds" not found') {
-      return { status: 400, message: { message: '"categoryIds" not found' } };
-    }
-
-    const blogPost = await BlogPost.create({
-      title, content, userId }, { transaction: t });
-
-    const categoriesPromisses = categoryIds.map((categoryId) => PostCategory.create({
-      postId: blogPost.id, categoryId }, { transaction: t }));
-
-    await Promise.all(categoriesPromisses);
-    return { status: 201, message: blogPost };
-    } catch (e) {
-      await t.rollback();
-      throw e;
-    }
+const getAllPosts = async () => {
+  const result = await BlogPost.findAll({
+    include: [
+      { model: User, as: 'user', attributes: { exclude: ['password'] } },
+      { model: Category, as: 'categories', through: { attributes: [] } },
+    ],
+  });
+  return result;
 };
 
-const deleteBlogPost = async (id, userId) => {
-  const { status, message } = await validateDeleteBlogPost(id, userId);
-  if (status) return { status, message };
+const getById = async (id) => {
+  const result = await BlogPost.findOne({
+    where: { id },
+    include: [
+      { model: User, as: 'user', attributes: { exclude: ['password'] } },
+      { model: Category, as: 'categories', through: { attributes: [] } },
+    ],
+  });
+  return result;
+};
 
+const updatePostById = async (data, id) => {
+  const post = await getById(id);
+  post.update(data);
+  return post;
+};
+
+const deletePost = async (id) => {
   await BlogPost.destroy({
-      where: { id, userId },
+    where: { id },
   });
-  return { status: null, message: 'Ok, post deleted successfully' };
 };
 
-const getBlogPost = async () => {
-  const post = await BlogPost.findAll({ attributes: { exclude: ['user_id'] },
-    include: [{
-      model: User, as: 'user', attributes: { exclude: ['password'] },
-    }, { model: Category, as: 'categories', through: { attributes: [] },
-    }],
+const searchPost = async (term) => {
+  const posts = await BlogPost.findAll({
+    where: {
+      [Op.or]: [
+        { title: { [Op.like]: `%${term}%` } },
+        { content: { [Op.like]: `%${term}%` } },
+      ],
+    },
+    include: [
+      { model: User, as: 'user', attributes: { exclude: ['password'] } },
+      { model: Category, as: 'categories', through: { attributes: [] } },
+    ],
   });
-  return post;
+
+  if (!posts) return [];
+  return posts;
 };
-const getBlogPostById = async (id) => {
-  const post = await BlogPost.findOne({ where: { id },
-    attributes: { exclude: ['user_id'] },
-    include: [{
-      model: User, as: 'user',
-    }, { model: Category, as: 'categories', through: { attributes: [] },
-    }],
-  });
-  return post;
-};
+
 module.exports = {
-  insertBlogPost,
-  deleteBlogPost,
-  getBlogPost,
-  getBlogPostById,
+  createPost,
+  getAllPosts,
+  getById,
+  updatePostById,
+  deletePost,
+  searchPost,
 };

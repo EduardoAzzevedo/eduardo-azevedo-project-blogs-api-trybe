@@ -1,48 +1,48 @@
 const { User } = require('../models');
-const { validateUser } = require('../middleware/validateField');
-const createToken = require('../middleware/createToken');
 
-const inserUser = async (body) => {
-  const JOIvalidate = validateUser(body);
-  if (JOIvalidate.error) return { status: 400, message: JOIvalidate.error.details[0].message };
-
-  const emailValidate = await User.findOne({ where: { email: body.email } });
-  if (emailValidate) return { status: 409, message: 'User already registered' };
-  const newUser = await User.create(body);
-  const findUser = await User.findAll({
-    attributes: ['displayName', 'email', 'password'],
-    where: newUser.dataValues,
+const getByEmail = async (email) => {
+  const result = await User.findOne({
+    where: { email },
   });
-  const newToken = createToken.tokenGenerate(findUser);
-  return newToken;
+  if (!result) return { type: 400, message: 'Invalid fields' };
+  return { type: null, message: result.dataValues };
 };
 
-const getUsers = async () => {
-  const users = await User.findAll({
-    attributes: { exclude: ['password'] },
-  });
-  return users;
-};
-
-const getUserById = async (id) => {
-  const userById = await User.findOne({
+const getById = async (id) => {
+  const result = await User.findOne({
     where: { id },
     attributes: { exclude: ['password'] },
   });
-  if (!userById) {
-    return { status: 404, message: 'User does not exist' };
-  }
-  return { status: 200, user: userById };
+  if (!result) return { type: 404, message: 'User does not exist' };
+  return { type: null, message: result };
 };
 
-const deleteUserById = async (id) => {
-  const result = await User.destroy({ where: { id } });
-  return result;
+const insertUser = async (data) => {
+  const response = await User.findOne({
+    where: { email: data.email },
+  });
+  if (response) return { type: 409, message: 'User already registered' };
+  const result = await User.create(data);
+  return { type: null, message: result };
+};
+
+const getAllUsers = async () => {
+  const users = await User.findAll({
+    attributes: { exclude: ['password'] },
+  });
+  return { type: null, message: users };
+};
+
+const deleteMe = async (id) => {
+  await User.destroy({
+    where: { id },
+  });
 };
 
 module.exports = {
-  inserUser,
-  getUsers,
-  getUserById,
-  deleteUserById,
+  getByEmail,
+  getById,
+  insertUser,
+  getAllUsers,
+  deleteMe,
 };

@@ -1,6 +1,6 @@
 const PostService = require('../services/blogPostService');
 
-const validatePost = (req, res, next) => {
+const validatePostField = (req, res, next) => {
   const { title, content, categoryIds } = req.body;
   if (!title || !content || !categoryIds) {
     return res.status(400).json({ message: 'Some required fields are missing' });
@@ -18,7 +18,7 @@ const validateUpdatePost = (req, res, next) => {
   next();
 };
 
-const checkPost = async (req, res, next) => {
+const validatePost = async (req, res, next) => {
   const postId = req.params.id;
   const post = await PostService.getById(postId);
   const { id } = req.user.message.dataValues;
@@ -29,7 +29,7 @@ const checkPost = async (req, res, next) => {
 };
 
 module.exports = {
-  validatePost,
+  validatePostField,
   validateUpdatePost,
-  checkPostAndAuth: checkPost,
+  validatePost,
 };

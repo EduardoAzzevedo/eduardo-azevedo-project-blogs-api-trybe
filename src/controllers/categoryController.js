@@ -1,35 +1,36 @@
-const categoryService = require('../services/categoryService');
-const createToken = require('../middleware/createToken');
+require('dotenv/config');
 
-const insertCategory = async (req, res) => {
-  const { name } = req.body;
-  const { authorization } = req.headers;
-  if (!authorization) return res.status(401).json({ message: 'Token not found' });
+const JWT = require('jsonwebtoken');
+const CategoryService = require('../services/categoryService');
 
+const secret = process.env.JWT_SECRET || 'seusecretdetoken';
+const jwtConfig = {
+  expiresIn: '7d',
+  algorithm: 'HS256',
+};
+
+const createCategory = async (req, res) => {
   try {
-    createToken.tokenVerify(authorization);
-    const category = await categoryService.inserCategory(name);
-    return res.status(201).json(category);
-  } catch (e) {
-    console.log('erre aturização', e);
-    return res.status(401).json({ message: 'Expired or invalid token' });
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ message: '"name" is required' });
+    const { message } = await CategoryService.createCategory(req.body);
+    JWT.sign({ data: { userId: message.id } }, secret, jwtConfig);
+    res.status(201).json(message);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: error.message });
   }
 };
 
 const getAllCategories = async (req, res) => {
-  const { authorization } = req.headers;
-  if (!authorization) return res.status(401).json({ message: 'Token not found' });
-
   try {
-    createToken.tokenVerify(authorization);
-    const categories = await categoryService.getAllCategories();
-    return res.status(200).json(categories);
-  } catch (e) {
-    return res.status(401).json({ message: 'Expired or invalid token' });
+    const result = await CategoryService.getAllCategories();
+    JWT.sign({ data: { userId: result.id } }, secret, jwtConfig);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = {
-  insertCategory,
-  getAllCategories,
-};
+module.exports = { createCategory, getAllCategories };
