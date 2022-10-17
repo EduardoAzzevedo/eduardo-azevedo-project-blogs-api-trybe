@@ -2,19 +2,19 @@ require('dotenv/config');
 const jwt = require('jsonwebtoken');
 const { getByEmailPassword } = require('../services/loginService');
 
-const secret = process.env.JWT_SECRET || 'quiViagi';
-const jwtConfig = { expiresIn: '5d', algorithm: 'HS256' };
+const secret = process.env.JWT_SECRET;
+const jwtConfig = { expiresIn: '7h', algorithm: 'HS256' };
 
-const tokenGenerate = ({ displayName, email, password }) => {
-  const payload = {
-    displayName,
-    email,
-    password,
-  };
-
-  const token = jwt.sign(payload, secret, jwtConfig);
+const tokenGenerate = (id) => {
+  const token = jwt.sign({ id }, secret, jwtConfig);
 
   return token;
+};
+
+const getUserIdFromToken = async ({ authorization: token }) => {
+  const validatedToken = jwt.verify(token, secret);
+
+  return validatedToken.id;
 };
 
 const isBoryValid = (email, password) => email && password;
@@ -40,4 +40,5 @@ module.exports = {
   tokenGenerate,
   createToken,
   tokenVerify,
+  getUserIdFromToken,
 };

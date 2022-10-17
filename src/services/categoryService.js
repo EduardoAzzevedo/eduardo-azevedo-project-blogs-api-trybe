@@ -1,17 +1,25 @@
 const { Category } = require('../models');
 
-const inserCategory = async (name) => {
-  console.log('Nome', name);
-  const newCategory = await Category.create({ name });
-  return newCategory;
+const createCategory = async (name) => {
+  const newCategory = await Category.create(name);
+  return { type: null, message: newCategory };
 };
 
 const getAllCategories = async () => {
-  const allCategories = await Category.findAll({});
-  return allCategories;
+  const categories = await Category.findAll();
+  return categories;
 };
 
-module.exports = {
-  inserCategory,
+const getById = async (id) => {
+  const category = await Category.findOne({
+    where: { id },
+  });
+  if (!category) return { type: 400, message: '"categoryIds" not found' };
+  return { type: null, message: category };
+};
+
+  module.exports = {
+  createCategory,
   getAllCategories,
+  getById,
 };

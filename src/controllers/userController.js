@@ -1,45 +1,79 @@
-const createToken = require('../middleware/createToken');
-const userService = require('../services/userService');
+require('dotenv/config');
 
-const insertUser = async (req, res) => {
-  const token = await userService.inserUser(req.body);
-  if (token.status) {
-    return res.status(token.status).json({ message: token.message });
-  }
-  return res.status(201).json({ token });
+const JWT = require('jsonwebtoken');
+const UserService = require('../services/userService');
+
+const secret = process.env.JWT_SECRET || 'seusecretdetoken';
+const jwtConfig = {
+  expiresIn: '7d',
+  algorithm: 'HS256',
 };
 
-const getUsers = async (req, res) => {
-  const { authorization } = req.headers;
-  if (!authorization) return res.status(401).json({ message: 'Token not found' });
+const login = async (req, res) => {
   try {
-    createToken.tokenVerify(authorization);
-    const users = await userService.getUsers();
-    return res.status(200).json(users);
-  } catch (e) {
-    return res.status(401).json({ message: 'Expired or invalid token' });
+    const { email } = req.body;
+    const { type, message } = await UserService.getByEmail(email);
+    if (type) return res.status(type).json({ message });
+
+    const token = JWT.sign({ data: { userId: message.id } }, secret, jwtConfig);
+
+    return res.status(200).json({ token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-const getUserById = async (req, res) => {
-  const { authorization } = req.headers;
-  const { id } = req.params;
-  if (!authorization) return res.status(401).json({ message: 'Token not found' });
+const createUser = async (req, res) => {
   try {
-    createToken.tokenVerify(authorization);
-    const { status, message, user } = await userService.getUserById(id);
-    console.log('USUARIO', user);
-    if (!user) {
-      return res.status(status).json({ message });
-    }
-    return res.status(status).json(user);
+    const { type, message } = await UserService.insertUser(req.body);
+    if (type) return res.status(type).json({ message });
+    const token = JWT.sign({ data: { userId: message.id } }, secret, jwtConfig);
+
+    return res.status(201).json({ token });    
   } catch (e) {
-    return res.status(401).json({ message: 'Expired or invalid token' });
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const getAllUsers = async (req, res) => {
+  try {
+    const { type, message } = await UserService.getAllUsers();
+    if (type) return res.status(type).json({ message });
+    JWT.sign({ data: { userId: message.id } }, secret, jwtConfig);
+
+    res.status(200).json(message);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const getById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type, message } = await UserService.getById(id);
+    if (type) return res.status(type).json({ message });
+
+    JWT.sign({ data: { userId: message.dataValues.id } }, secret, jwtConfig);
+    res.status(200).json(message.dataValues);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const deleteMe = async (req, res) => {
+  try {
+    const { id } = req.user.message.dataValues;
+    await UserService.deleteMe(id);
+    res.status(204).end();    
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
 };
 
 module.exports = {
-  insertUser,
-  getUsers,
-  getUserById,
+  login,
+  createUser,
+  getAllUsers,
+  getById,
+  deleteMe,
 };

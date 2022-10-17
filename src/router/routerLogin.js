@@ -1,10 +1,9 @@
 const express = require('express');
-// const validateJWT = require('../middleware/validateJWT');
-const { createToken } = require('../middleware/createToken');
+const { validateLogin } = require('../middleware/validateField');
 const controllerLogin = require('../controllers/loginController');
 
 const router = express.Router();
 
-router.post('/', createToken, controllerLogin.getEmailPassword);
+router.post('/', validateLogin, controllerLogin.getEmailPassword);
 
 module.exports = router;

@@ -1,7 +1,9 @@
 const express = require('express');
-const router = require('./router/routerLogin');
-const { routerUser } = require('./router/userRouter');
+const { validateLogin, validateNewUser } = require('./middleware/user.middleware');
+const UserController = require('./controllers/userController');
+const validateJWT = require('./authorization/JWT');
 const { routerCategory } = require('./router/categoryRouter');
+const { routerBlogPost } = require('./router/blogPost');
 
 // ...
 
@@ -9,9 +11,11 @@ const app = express();
 
 app.use(express.json());
 
-app.use('/login', router);
-app.use('/user', routerUser);
+app.post('/login', validateLogin, UserController.login);
+app.post('/user', validateNewUser, UserController.createUser);
+app.get('/user', validateJWT, UserController.getAllUsers);
 app.use('/categories', routerCategory);
+app.use('/post', routerBlogPost);
 
 // ...
 
